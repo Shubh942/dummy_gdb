@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify
 from pygdbmi.gdbcontroller import GdbController
-
+from flask_cors import CORS
 app = Flask(__name__)
-
+CORS(app)
 # Initialize global variables to store the GDB controller and program name
 gdb_controller = None
 program_name = None
@@ -15,12 +15,12 @@ def execute_gdb_command(command):
     
     # Extracting the 'message' field from the response
     # response=jsonify(response2)
-    print(type(response2))
+    # print(type(response2))
     strm=""
     for rem in response2:
         print(rem)
         strm=strm+"\n "+str(rem.get('payload'))
-    print(strm)
+    # print(strm)
 
     return strm.strip()
 
