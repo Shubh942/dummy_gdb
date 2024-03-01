@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
+import subprocess
 app = Flask(__name__)
 CORS(app)
 # Initialize global variables to store the GDB controller and program name
@@ -18,7 +19,7 @@ def execute_gdb_command(command):
     # print(type(response2))
     strm=""
     for rem in response2:
-        print(rem)
+        # print(rem)
         strm=strm+"\n "+str(rem.get('payload'))
     # print(strm)
 
@@ -40,7 +41,7 @@ def start_gdb_session(program):
 
     # Start the GDB session
     try:
-        response = gdb_controller.write(f"-file-exec-and-symbols {program_name}")
+        response = gdb_controller.write(f"-file-exec-and-symbols {program_name}.exe")
         if response is None:
             print("No response from GDB controller")
             raise RuntimeError("No response from GDB controller")
@@ -61,10 +62,14 @@ def gdb_command():
     global program_name
     data = request.get_json()
     command = data.get('command')
+    file = data.get('name')
+    print(command)
     
     # Start the GDB session if not already started
-    if program_name is None:
-        start_gdb_session(data.get('program', 'program.exe'))
+    if program_name!=file:
+        print(file)
+        print(program_name)
+        start_gdb_session(f'{file}')
 
     try:
         # Execute the GDB command
@@ -82,6 +87,26 @@ def gdb_command():
         }
     
     return jsonify(response)
+
+@app.route('/compile', methods=['POST'])
+def compile_code():
+    global program_name
+    data = request.get_json()
+    code = data.get('code')
+    name = data.get('name')
+
+    # Write code to a temporary file
+    with open(f'{name}.cpp', 'w') as file:
+        file.write(code)
+
+    # Compile the code
+    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'{name}.exe'], capture_output=True, text=True)
+
+    if result.returncode == 0:
+        program_name=None
+        return jsonify({'success': True, 'output': 'Compilation successful.'})
+    else:
+        return jsonify({'success': False, 'output': result.stderr})
 
 if __name__ == '__main__':
     app.run(debug=True, port=8000)
