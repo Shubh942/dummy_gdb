@@ -3,7 +3,8 @@ from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
 import subprocess
 app = Flask(__name__)
-CORS(app)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 # Initialize global variables to store the GDB controller and program name
 gdb_controller = None
 program_name = None
